@@ -1,0 +1,1 @@
+## Cronjob para excluir jobs e pods com status "failed" ###
