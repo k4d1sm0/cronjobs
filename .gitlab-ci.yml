@@ -1,0 +1,79 @@
+include:
+  - project: 'TruckPad/utils/ci_tricks'
+    file:
+      - '/ci_jobs/ci_scripts.yml'
+      - '/ci_jobs/check_releasable.yml'
+      - '/ci_jobs/create_release.yml'
+      - '/ci_jobs/notify_slack.yml'
+
+
+stages:
+  - pipeline-config
+  - build
+  - deploy
+  - release
+
+
+.hml-tags: &hml-tags
+  tags:
+    - cluster
+    - kubernetes
+    - hml
+
+.stg-tags: &stg-tags
+  tags:
+    - cluster
+    - kubernetes
+    - stg
+
+.prod-tags: &prod-tags
+  tags:
+    - cluster
+    - kubernetes
+    - prod
+
+.deploy: &deploy
+  image: gcr.io/truckpad-176922/gitlab-k8s-runner:latest
+  stage: deploy
+  when: manual
+  except:
+    - schedules
+  script:
+    - ci_cd/k8s/helm_deploy.sh
+
+homolog main:
+  <<: *deploy
+  environment:
+    name: homolog
+  variables:
+    NAMESPACE: homolog
+    SUBENVIRONMENT: main
+  <<: *hml-tags
+
+
+staging main:
+  <<: *deploy
+  when: always
+  environment:
+    name: staging
+  variables:
+    NAMESPACE: staging
+    SUBENVIRONMENT: main
+  <<: *stg-tags
+  only:
+    refs:
+      - main
+
+
+production main:
+  <<: *deploy
+  when: on_success
+  environment:
+    name: production
+  variables:
+    NAMESPACE: production
+    SUBENVIRONMENT: main
+  <<: *prod-tags
+  only:
+    refs:
+      - /^v([0-9]{1,3}\.)+[0-9]{1,3}$/
