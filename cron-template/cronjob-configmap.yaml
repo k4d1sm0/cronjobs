@@ -1,0 +1,19 @@
+{{- if .Values.cronjobs }}
+  {{- if .Values.environments}}
+  {{- range $job := .Values.cronjobs }}
+---
+apiVersion: v1
+data:
+  {{- range  $key, $value := $.Values.environments}}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  ELASTIC_APM_SERVICE_VERSION: {{ $.Values.app.commit }}
+kind: ConfigMap
+metadata:
+  annotations:
+    sidecar.istio.io/inject: "false"
+  name: {{ $.Release.Name }}-{{ $job.name }}-cronjob-configmap
+  namespace:  {{ printf "%s" $.Release.Namespace | default "default"}}
+  {{- end }}
+  {{- end }}
+  {{- end }}

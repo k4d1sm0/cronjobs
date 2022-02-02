@@ -89,8 +89,7 @@ dep_environment=$dep_environment
 CERT_MANAGER_ACCESS_KEY_ID=$CERT_MANAGER_ACCESS_KEY_ID
 "
 set -x
-helm repo update
-helm upgrade --wait --cleanup-on-fail --install --debug "$RELEASE_NAME" --values temp_values.yaml "cron-template/cronjob" --version "$CHART_VERSION" --set app.mergeRequest="$BRANCH_JOB" --set app.name="$CI_PROJECT_NAME" --set app.commit="$DESCRIBED_VERSION" --set deployment.environment="$dep_environment" --set providersConfig.route53.AwsAccessKeyId="$CERT_MANAGER_ACCESS_KEY_ID" --set app.subenvironment="$SUBENVIRONMENT" --namespace $NAMESPACE
+
 set +x
 
 if [ -f ./gcr-access-token.txt ] && [ "$NAMESPACE" == "homolog" ]; then

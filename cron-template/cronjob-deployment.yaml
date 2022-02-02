@@ -1,0 +1,50 @@
+{{- if .Values.cronjobs }}
+{{- range $job := .Values.cronjobs }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ printf "%s" $job.name }}
+  namespace: {{ printf "%s" $.Release.Namespace | default "default" }}
+  annotations:
+    sidecar.istio.io/inject: "false"
+spec:
+  schedule: {{ printf "\"%s\"" $job.cron }}
+  startDeadlineSeconds: {{ $job.startDeadlineSeconds | default 300 }}
+  concurrencyPolicy: {{ $job.concurrencyPolicy | default "Forbid" }}
+  successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit | default 5 }}
+  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit | default 3}}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          containers:
+          - name: {{ printf "%s" $.Release.Name }}
+            image: {{ printf "%s%s:%s" $.Values.image.registry $.Values.image.repository (include "numericSafe" $.Values.app.commit) }}
+            env:
+              - name: ELASTIC_APM_SERVICE_VERSION
+                valueFrom:
+                  configMapKeyRef:
+                    name: {{ $.Release.Name }}-{{ $job.name }}-cronjob-configmap
+                    key: ELASTIC_APM_SERVICE_VERSION
+            {{- range  $key, $value := $.Values.environments}}
+              - name: {{ $key }}
+                valueFrom:
+                  configMapKeyRef:
+                    name: {{ $.Release.Name }}-{{ $job.name }}-cronjob-configmap
+                    key: {{ $key }}
+            {{- end }}
+            {{- range $key, $value := $.Values.secrets }}
+              - name: {{ $key }}
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ $.Release.Name }}-{{ $job.name }}-cronjob-secret
+                    key: {{ $key }}
+            {{- end }}
+            command: [{{- range $index, $value := $job.command}} {{- if $index}},{{end}} {{$value | quote}} {{end}}]
+          restartPolicy: OnFailure
+---
+{{- end }}
+{{- end }}
