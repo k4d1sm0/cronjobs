@@ -1,0 +1,40 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: del-failed-pods
+  name: del-failed-pods
+rules:
+- apiGroups:
+  - extensions
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - 'patch'
+
+---
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: del-failed-pods
+spec:
+  schedule: "0 */2 * * *"  
+  concurrencyPolicy: Replace
+  jobTemplate:
+    metadata:
+      name: shutdown-deleter
+    spec:
+      template:
+        spec:
+          serviceAccountName: deleter
+          containers:
+          - name: shutdown-deleter
+            image: bitnami/kubectl
+            imagePullPolicy: IfNotPresent
+            command:
+              - "/bin/sh"
+            args:
+              - "-c"
+              - "kubectl  delete pods --all-namespaces --field-selector status.phase=Failed -A --ignore-not-found=true"
+          restartPolicy: Never

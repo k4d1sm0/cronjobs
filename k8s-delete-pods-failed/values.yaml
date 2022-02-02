@@ -1,0 +1,8 @@
+image:
+  registry: bitnami/kubectl
+  tag: latest
+
+cronjobs:
+  - name: 'del-failed-pods'
+    cron: "0 * * * *"
+    command: ["kubectl  delete pods --all-namespaces --field-selector status.phase=Failed -A --ignore-not-found=true"]
