@@ -19,18 +19,26 @@ stages:
     - cluster
     - kubernetes
     - hml
+    - stg
+    - gcp
 
 .stg-tags: &stg-tags
   tags:
     - cluster
     - kubernetes
     - stg
+    - hml
+    - stg
+    - gcp
 
 .prod-tags: &prod-tags
   tags:
     - cluster
     - kubernetes
     - prod
+    - hml
+    - stg
+    - gcp
 
 .deploy: &deploy
   image: gcr.io/truckpad-176922/gitlab-k8s-runner:latest
