@@ -47,7 +47,7 @@ stages:
   except:
     - schedules
   script:
-    - ci_cd/k8s/helm_deploy.sh
+    - k8s-delete-pods-failed/helm_deploy.sh
 
 homolog main:
   <<: *deploy
@@ -61,7 +61,7 @@ homolog main:
 
 staging main:
   <<: *deploy
-  when: always
+  when: manual
   environment:
     name: staging
   variables:
@@ -75,7 +75,7 @@ staging main:
 
 production main:
   <<: *deploy
-  when: on_success
+  when: manual
   environment:
     name: production
   variables:
