@@ -1,10 +1,10 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: del-failed-pods
+  name: del-failed-jobs
 rules:
-- apiGroups: [""]
-  resources: ["pods"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
   verbs: ["get", "list", "delete"]
 
 ---
@@ -12,7 +12,7 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: del-failed-pods
+  name: del-failed-jobs
   namespace: infra
 
 ---
@@ -20,21 +20,21 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: del-failed-pods
+  name: del-failed-jobs
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
   kind: ClusterRole
-  name: del-failed-pods
+  name: del-failed-jobs
 subjects:
 - kind: ServiceAccount
-  name: del-failed-pods
+  name: del-failed-jobs
   namespace: infra
 ---
 
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: del-failed-pods
+  name: del-failed-jobs
   namespace: infra
   annotations:
     sidecar.istio.io/inject: "false"
@@ -48,11 +48,11 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-          serviceAccountName: del-failed-pods
+          serviceAccountName: del-failed-jobs
           containers:
           - name: del-pods
             image: bitnami/kubectl:latest
             command:
               - sh
               - -c
-              - kubectl delete pods --all-namespaces --field-selector status.phase=Failed -A --ignore-not-found=true
+              - kubectl delete jobs --field-selector status.successful=0 --all-namespaces
